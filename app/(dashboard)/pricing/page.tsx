@@ -1,6 +1,6 @@
 import { checkoutAction } from '@/lib/payments/actions';
 import { Check } from 'lucide-react';
-import { getStripePrices, getStripeProducts } from '@/lib/payments/stripe';
+import { getPaystackPrices, getPaystackProducts } from '@/lib/payments/paystack';
 import { SubmitButton } from './submit-button';
 
 // Prices are fresh for one hour max
@@ -8,8 +8,8 @@ export const revalidate = 3600;
 
 export default async function PricingPage() {
   const [prices, products] = await Promise.all([
-    getStripePrices(),
-    getStripeProducts(),
+    getPaystackPrices(),
+    getPaystackProducts(),
   ]);
 
   const basePlan = products.find((product) => product.name === 'Base');
@@ -24,6 +24,7 @@ export default async function PricingPage() {
         <PricingCard
           name={basePlan?.name || 'Base'}
           price={basePrice?.unitAmount || 800}
+          currency={basePrice?.currency || 'ZAR'}
           interval={basePrice?.interval || 'month'}
           trialDays={basePrice?.trialPeriodDays || 7}
           features={[
@@ -36,6 +37,7 @@ export default async function PricingPage() {
         <PricingCard
           name={plusPlan?.name || 'Plus'}
           price={plusPrice?.unitAmount || 1200}
+          currency={plusPrice?.currency || 'ZAR'}
           interval={plusPrice?.interval || 'month'}
           trialDays={plusPrice?.trialPeriodDays || 7}
           features={[
@@ -53,6 +55,7 @@ export default async function PricingPage() {
 function PricingCard({
   name,
   price,
+  currency,
   interval,
   trialDays,
   features,
@@ -60,11 +63,18 @@ function PricingCard({
 }: {
   name: string;
   price: number;
+  currency: string;
   interval: string;
   trialDays: number;
   features: string[];
   priceId?: string;
 }) {
+  const formattedPrice = new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+  }).format(price / 100);
+
   return (
     <div className="pt-6">
       <h2 className="text-2xl font-medium text-gray-900 mb-2">{name}</h2>
@@ -72,7 +82,7 @@ function PricingCard({
         with {trialDays} day free trial
       </p>
       <p className="text-4xl font-medium text-gray-900 mb-6">
-        ${price / 100}{' '}
+        {formattedPrice}{' '}
         <span className="text-xl font-normal text-gray-600">
           per user / {interval}
         </span>
